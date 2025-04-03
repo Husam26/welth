@@ -2,6 +2,8 @@ import arcjet, { createMiddleware, detectBot, shield } from "@arcjet/next";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+console.log("✅ Middleware is running..."); // Debugging log
+
 const isProtectedRoute = createRouteMatcher([
     "/dashboard(.*)",
     "/account(.*)",
@@ -30,9 +32,11 @@ const aj = arcjet({
 
 // Create base Clerk middleware
 const clerk = clerkMiddleware(async (auth, req) => {
+  console.log("🔍 Clerk middleware is running..."); // Debugging log
   const { userId } = await auth();
 
   if (!userId && isProtectedRoute(req)) {
+    console.log("❌ User not authenticated, redirecting...");
     const { redirectToSignIn } = await auth();
     return redirectToSignIn();
   }
