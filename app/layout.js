@@ -1,15 +1,10 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/Header";
+import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Create Next App",
@@ -18,12 +13,27 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={`${inter.className}`}>
+          {/* Header */}
+          <Header />
+          <main className="min-h-screen">{children}</main>
+          <Toaster richColors/>
+          {/* Footer */}
+          <footer className="bg-blue-50 py-12">
+            <div className="container mx-auto px-4 text-center">
+              <p className="text-gray-600 text-lg font-medium">
+                Made with ❤️ by <span className="text-blue-600 font-semibold">Husamuddin</span>
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                © {new Date().getFullYear()} All rights reserved.
+              </p>
+            </div>
+          </footer>
+
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
