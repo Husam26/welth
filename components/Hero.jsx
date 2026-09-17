@@ -9,71 +9,47 @@ import { useRef } from "react"
 const Hero = () => {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref });
-
-  // Scale effect: Image will slightly zoom in on scroll
-  const scale = useTransform(scrollYProgress, [0, 1], [1.0, 1.1]); // Zoom effect
-  const opacity = useTransform(scrollYProgress, [0, 0.7], [1, 0.8]); // Fades out slightly
-
-  // To make the transition smoother, we add a spring animation or easing
-  const smoothScale = useTransform(scale, (value) => value, {
-    ease: "easeOut", // Add a smooth easing curve
-    duration: 0.6, // Customize duration for a smoother effect
-  });
-
-  const smoothOpacity = useTransform(opacity, (value) => value, {
-    ease: "easeOut", // Smoother easing for opacity as well
-    duration: 0.6, // Match the transition duration with the scale
-  });
+  const scale = useTransform(scrollYProgress, [0, 1], [1.0, 1.08]);
+  const opacity = useTransform(scrollYProgress, [0, 0.85], [1, 0.85]);
 
   return (
-    <div className="pb-20 px-3 py-5 bg-white text-white">
-      <div className="max-w-5xl mx-auto text-center flex flex-col items-center justify-center space-y-8 relative">
-        
-        {/* Heading Section */}
-        <div className="space-y-3">
-          <h1 className="text-6xl font-extrabold leading-tight bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 text-transparent bg-clip-text">
-            Manage Your Finances
-            <br /> with Intelligence
-          </h1>
-          <p className="text-xl max-w-3xl mx-auto bg-gradient-to-r from-gray-700 via-gray-900 to-black text-transparent bg-clip-text">
-            An AI-powered financial management platform that helps you track, analyze, and optimize your spending with real-time insights.
-          </p>
-        </div>
+    <section className="px-4 pb-20 pt-16">
+      <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+          AI-powered personal finance
+        </span>
 
-        {/* Button Section */}
-        <div className="flex flex-col sm:flex-row gap-6 justify-center">
-          <Link href="/">
-            <Button size="lg" className="px-10 text-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:opacity-90 transition duration-300">
-              Get Started
-            </Button>
+        <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl">
+          Manage your finances
+          <br className="hidden sm:block" /> with <span className="text-primary">intelligence</span>
+        </h1>
+
+        <p className="max-w-2xl text-lg text-muted-foreground">
+          Track, analyze and optimize your spending with AI receipt scanning, smart budgets,
+          anomaly detection and a financial digital twin.
+        </p>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link href="/dashboard">
+            <Button size="lg" className="px-8">Get Started</Button>
           </Link>
-          <Link href="/learn-more">
-            <Button size="lg" variant="outline" className="px-10 text-lg border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition duration-300">
-              Learn More
-            </Button>
+          <Link href="#features">
+            <Button size="lg" variant="outline" className="px-8">Learn More</Button>
           </Link>
         </div>
-
-        {/* Image Section with Scroll Animation */}
-        <motion.div
-          ref={ref}
-          style={{
-            scale: smoothScale,
-            opacity: smoothOpacity,
-          }}
-          className="mt-12"
-        >
-          <Image
-            src="/hero.webp"
-            alt="Financial Management Banner"
-            width={2000}
-            height={620}
-            className="rounded-lg shadow-lg border mx-auto"
-          />
-        </motion.div>
-
       </div>
-    </div>
+
+      <motion.div ref={ref} style={{ scale, opacity }} className="mx-auto mt-14 max-w-5xl">
+        <Image
+          src="/hero.webp"
+          alt="Welth dashboard preview"
+          width={2000}
+          height={620}
+          className="mx-auto rounded-xl border border-border shadow-2xl shadow-primary/5"
+          priority
+        />
+      </motion.div>
+    </section>
   )
 }
 

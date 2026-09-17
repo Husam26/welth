@@ -47,9 +47,7 @@ const ReceiptScanner = ({ onScanComplete }) => {
       <Button
         type="button"
         variant="outline"
-        className="w-full h-10 bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 
-             animate-gradient hover:opacity-90 transition-all duration-300 ease-in-out 
-             text-white hover:text-white transform hover:scale-105 shadow-md hover:shadow-lg"
+        className="w-full border-dashed"
         onClick={() => fileInputRef.current?.click()}
         disabled={scanReceiptLoading}
       >

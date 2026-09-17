@@ -28,6 +28,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { categoryColors } from "@/data/categories";
+import { cn } from "@/lib/utils";
 import useFetch from "@/hooks/use-fetch";
 import { format } from "date-fns";
 import {
@@ -84,9 +85,15 @@ const TransactionTable = ({ transactions }) => {
   };
 
   useEffect(() => {
-    if (deleted && !deleteLoading) {
-      toast.error("Transactions deleted successFully");
+    if (!deleted || deleteLoading) return;
+
+    if (deleted.success) {
+      toast.success("Transactions deleted successfully");
       setSelectedIds([]);
+      // Refresh server data so the deleted rows disappear immediately
+      router.refresh();
+    } else if (deleted.error) {
+      toast.error(deleted.error);
     }
   }, [deleted, deleteLoading]);
 
@@ -164,18 +171,18 @@ const TransactionTable = ({ transactions }) => {
         <BarLoader
           className="mt-4"
           width="100%" // Make sure it's full width
-          color="#9333ea" // Color for the bar (purple shade as you want)
+          color="#4f46e5"
           loading={deleteLoading} // This should control the loading state
         />
       )}
 
       {/* Filter Section */}
-      <div className="flex flex-wrap gap-4 justify-center sm:justify-between items-center p-4 bg-gray-100 rounded-lg shadow-md w-full">
+      <div className="flex w-full flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
         <div className="flex-1 max-w-xl mb-4 sm:mb-0">
           {/* Large Search Bar */}
           <input
             type="text"
-            className="w-full max-w-xl border border-gray-300 rounded-lg p-2 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="h-9 w-full max-w-xl rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             placeholder="Search by description or amount"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -185,7 +192,7 @@ const TransactionTable = ({ transactions }) => {
         <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-center sm:justify-end">
           {/* Type Filter */}
           <select
-            className="border border-gray-300 rounded-md p-2 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
           >
@@ -196,7 +203,7 @@ const TransactionTable = ({ transactions }) => {
 
           {/* Recurring Filter */}
           <select
-            className="border border-gray-300 rounded-md p-2 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             value={recurringFilter}
             onChange={(e) => setRecurringFilter(e.target.value)}
           >
@@ -210,7 +217,6 @@ const TransactionTable = ({ transactions }) => {
             <Button
               onClick={handleDeleteSelected}
               variant="destructive"
-              className="bg-red-500 text-white hover:bg-red-600"
             >
               <Trash className="h-4 w-4 mr-2" />
               Delete Selected Transactions ({selectedIds.length})
@@ -221,7 +227,6 @@ const TransactionTable = ({ transactions }) => {
           <Button
             onClick={resetFilters}
             variant="outline"
-            className="bg-gray-200 text-gray-700 hover:bg-gray-300 "
           >
             Reset Filters
           </Button>
@@ -229,9 +234,9 @@ const TransactionTable = ({ transactions }) => {
       </div>
 
       {/* Transactions Table */}
-      <div className="rounded-xl shadow-md overflow-hidden border border-gray-300 bg-white">
-        <Table className="table-auto w-full">
-          <TableHeader className="bg-gray-100 text-gray-700 text-sm font-semibold border-b">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <Table className="w-full table-auto">
+          <TableHeader className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
             <TableRow>
               <TableHead className="w-[50px]">
                 <Checkbox
@@ -296,7 +301,7 @@ const TransactionTable = ({ transactions }) => {
               <TableRow>
                 <TableCell
                   colSpan={7}
-                  className="text-center text-gray-500 py-6"
+                  className="py-6 text-center text-muted-foreground"
                 >
                   No Transactions Found
                 </TableCell>
@@ -305,7 +310,7 @@ const TransactionTable = ({ transactions }) => {
               transactionsToShow.map((transaction) => (
                 <TableRow
                   key={transaction.id}
-                  className="border-b hover:bg-gray-50 transition-all duration-300"
+                  className="border-b transition-colors hover:bg-muted/50"
                 >
                   <TableCell className="text-center">
                     <Checkbox
@@ -314,7 +319,7 @@ const TransactionTable = ({ transactions }) => {
                       className="cursor-pointer"
                     />
                   </TableCell>
-                  <TableCell className="text-center text-gray-700">
+                  <TableCell className="text-center text-muted-foreground">
                     {format(new Date(transaction.date), "PP")}
                   </TableCell>
                   <TableCell className="text-center">
@@ -323,22 +328,21 @@ const TransactionTable = ({ transactions }) => {
                   <TableCell className="capitalize text-center">
                     <span
                       style={{
-                        background: categoryColors[transaction.category],
+                        backgroundColor: `${categoryColors[transaction.category]}1a`,
+                        color: categoryColors[transaction.category],
                       }}
-                      className="px-3 py-1 rounded-full text-white text-xs font-medium"
+                      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize"
                     >
                       {transaction.category}
                     </span>
                   </TableCell>
                   <TableCell
-                    className="text-right font-medium text-lg"
-                    style={{
-                      color:
-                        transaction.type === "EXPENSE" ? "#E53E3E" : "#48BB78",
-                    }}
+                    className={cn(
+                      "text-right font-medium nums",
+                      transaction.type === "EXPENSE" ? "text-negative" : "text-positive"
+                    )}
                   >
-                    {transaction.type === "EXPENSE" ? "-" : "+"} ₹
-                    {transaction.amount.toFixed(2)}
+                    {transaction.type === "EXPENSE" ? "-" : "+"} ₹{transaction.amount.toFixed(2)}
                   </TableCell>
 
                   <TableCell className="text-center">
@@ -348,12 +352,12 @@ const TransactionTable = ({ transactions }) => {
                           <TooltipTrigger>
                             <Badge
                               variant="outline"
-                              className="gap-2 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded-full py-1 px-2 text-xs font-semibold"
+                              className="gap-1 rounded-full border-transparent bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
                             >
                               <RefreshCw className="h-4 w-4 mr-1" />
                               {
                                 RECURRING_INTERVALS[
-                                  transaction.reccuringInterval
+                                  transaction.recurringInterval
                                 ]
                               }
                             </Badge>
@@ -372,7 +376,7 @@ const TransactionTable = ({ transactions }) => {
                         </Tooltip>
                       </TooltipProvider>
                     ) : (
-                      <Badge variant="outline" className="gap-2 text-gray-500">
+                      <Badge variant="outline" className="gap-1 text-muted-foreground">
                         <Clock className="h-4 w-4 mr-1" />
                         One-time
                       </Badge>
@@ -384,14 +388,14 @@ const TransactionTable = ({ transactions }) => {
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-gray-200"
+                          className="h-8 w-8 p-0"
                         >
-                          <MoreHorizontal className="h-4 w-4 text-gray-600" />
+                          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-white shadow-md rounded-lg">
+                      <DropdownMenuContent>
                         <DropdownMenuLabel
-                          className="cursor-pointer text-gray-800"
+                          className="cursor-pointer"
                           onClick={() => {
                             router.push(
                               `/transaction/create?edit=${transaction.id}`

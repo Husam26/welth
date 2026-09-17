@@ -34,11 +34,11 @@ export default function EmailTemplate({
             <Section style={styles.statsContainer}>
               <div style={styles.stat}>
                 <Text style={styles.label}>Total Income</Text>
-                <Text style={styles.value}>${data?.stats.totalIncome}</Text>
+                <Text style={styles.value}>₹{data?.stats.totalIncome}</Text>
               </div>
               <div style={styles.stat}>
                 <Text style={styles.label}>Total Expenses</Text>
-                <Text style={styles.value}>${data?.stats.totalExpenses}</Text>
+                <Text style={styles.value}>₹{data?.stats.totalExpenses}</Text>
               </div>
               <div style={styles.stat}>
                 <Text style={styles.label}>Net Balance</Text>
@@ -51,7 +51,7 @@ export default function EmailTemplate({
                         : "#2ECC71",
                   }}
                 >
-                  ${data?.stats.totalIncome - data?.stats.totalExpenses}
+                  ₹{data?.stats.totalIncome - data?.stats.totalExpenses}
                 </Text>
               </div>
             </Section>
@@ -65,7 +65,7 @@ export default function EmailTemplate({
                     ([category, amount]) => (
                       <div key={category} style={styles.row}>
                         <Text style={styles.category}>{category}</Text>
-                        <Text style={styles.categoryAmount}>${amount}</Text>
+                        <Text style={styles.categoryAmount}>₹{amount}</Text>
                       </div>
                     )
                   )}
@@ -89,6 +89,62 @@ export default function EmailTemplate({
               Thank you for using Welth. Keep tracking your finances for better
               financial health! 🚀
             </Text>
+          </Container>
+        </Body>
+      </Html>
+    );
+  }
+
+  if (type === "category-budget-alert") {
+    return (
+      <Html>
+        <Head />
+        <Preview>Category Budget Alert 🚨</Preview>
+        <Body style={styles.body}>
+          <Container style={styles.container}>
+            <Section style={styles.header}>
+              <Heading style={styles.title}>📊 Category Budget Alert</Heading>
+            </Section>
+
+            <Text style={styles.text}>
+              Hello <strong>{userName}</strong>,
+            </Text>
+            <Text style={styles.text}>
+              You have used{" "}
+              <span style={styles.highlight}>
+                {data?.percentageUsed?.toFixed(1) ?? "0"}%
+              </span>{" "}
+              of your <strong>{data?.category}</strong> budget this month.
+            </Text>
+
+            <Section style={styles.statsContainer}>
+              <div style={styles.stat}>
+                <Text style={styles.label}>Budget</Text>
+                <Text style={styles.value}>₹{data?.budgetAmount}</Text>
+              </div>
+              <div style={styles.stat}>
+                <Text style={styles.label}>Spent</Text>
+                <Text style={styles.value}>₹{data?.totalExpenses}</Text>
+              </div>
+              <div style={styles.stat}>
+                <Text style={styles.label}>Remaining</Text>
+                <Text style={{ ...styles.value, color: "#2ECC71" }}>
+                  ₹{(data?.budgetAmount - data?.totalExpenses).toFixed(1)}
+                </Text>
+              </div>
+            </Section>
+
+            <Section style={styles.buttonContainer}>
+              <Button style={styles.button} href="/budgets">
+                Review Your Budgets
+              </Button>
+            </Section>
+
+            <Section style={styles.footer}>
+              <Text style={styles.footerText}>
+                Stay on top of every category with Welth! 🚀
+              </Text>
+            </Section>
           </Container>
         </Body>
       </Html>

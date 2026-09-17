@@ -136,26 +136,26 @@ const AddTransactionForm = ({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="max-w-4xl mx-auto p-8 shadow-xl rounded-lg mt-3 border"
+      className="rounded-xl border border-border bg-card p-6 shadow-sm"
     >
-      {/* AI reciept scanner */}
-      {!editMode && <ReceiptScanner onScanComplete={handleScanComplete} />}
-
-      <h2 className="text-3xl font-semibold text-gray-800 text-center mb-8 mt-4">
-        {editId ? "Edit" : "Add"} Transaction
-      </h2>
+      {/* AI receipt scanner */}
+      {!editMode && (
+        <div className="mb-6">
+          <ReceiptScanner onScanComplete={handleScanComplete} />
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* Type Selection */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">
+          <label className="mb-2 block text-sm font-medium">
             Transaction Type
           </label>
           <Select
             onValueChange={(value) => setValue("type", value)}
             defaultValue={type}
           >
-            <SelectTrigger className="w-full mt-1 border-gray-300 shadow-sm rounded-lg hover:ring-2 focus:ring-2 focus:ring-blue-500 transition">
+            <SelectTrigger className="w-full mt-1 transition">
               <SelectValue placeholder="Select Type" />
             </SelectTrigger>
             <SelectContent>
@@ -172,14 +172,14 @@ const AddTransactionForm = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Amount Input */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="mb-2 block text-sm font-medium">
               Amount
             </label>
             <Input
               type="number"
               step="0.01"
               placeholder="₹0.00"
-              className="w-full mt-1 border-gray-300 shadow-sm rounded-lg text-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full mt-1"
               {...register("amount")}
             />
             {errors.amount && (
@@ -191,27 +191,27 @@ const AddTransactionForm = ({
 
           {/* Account Selection */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="mb-2 block text-sm font-medium">
               Account
             </label>
             <Select
               onValueChange={(value) => setValue("accountId", value)}
               defaultValue={getValues("accountId")}
             >
-              <SelectTrigger className="w-full mt-1 border-gray-300 shadow-sm rounded-lg hover:ring-2 focus:ring-2 focus:ring-blue-500">
+              <SelectTrigger className="w-full mt-1">
                 <SelectValue placeholder="Select Account" />
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((account) => (
                   <SelectItem key={account.id} value={account.id}>
                     <div className="flex items-center gap-2">
-                      <WalletIcon className="w-4 h-4 text-blue-500" />
+                      <WalletIcon className="w-4 h-4 text-primary" />
                       {account.name} (₹{parseFloat(account.balance).toFixed(2)})
                     </div>
                   </SelectItem>
                 ))}
                 <CreateAccountDrawer>
-                  <Button className="mt-4 w-full bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 py-2 rounded-lg transition">
+                  <Button className="mt-4 w-full gap-2">
                     <PlusCircleIcon className="w-5 h-5" />
                     Create Account
                   </Button>
@@ -228,7 +228,7 @@ const AddTransactionForm = ({
 
         {/* Category Selection */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">
+          <label className="mb-2 block text-sm font-medium">
             Category
           </label>
           <Select
@@ -236,7 +236,7 @@ const AddTransactionForm = ({
             onValueChange={(value) => setValue("category", value)}
             // defaultValue={getValues("category")}
           >
-            <SelectTrigger className="w-full mt-1 border-gray-300 shadow-sm rounded-lg hover:ring-2 focus:ring-2 focus:ring-blue-500">
+            <SelectTrigger className="w-full mt-1">
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
             <SelectContent>
@@ -256,17 +256,17 @@ const AddTransactionForm = ({
 
         {/* Date Picker */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">
+          <label className="mb-2 block text-sm font-medium">
             Transaction Date
           </label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full flex justify-between items-center px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full justify-between font-normal"
               >
                 {date ? format(date, "PPP") : <span>Pick a Date</span>}
-                <CalendarIcon className="w-5 h-5 text-gray-500" />
+                <CalendarIcon className="w-5 h-5 text-muted-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -288,12 +288,12 @@ const AddTransactionForm = ({
 
         {/* Description */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">
+          <label className="mb-2 block text-sm font-medium">
             Description
           </label>
           <Input
             placeholder="Enter the description"
-            className="w-full mt-1 border-gray-300 shadow-sm rounded-lg"
+            className="w-full mt-1"
             {...register("description")}
           />
           {errors.description && (
@@ -305,30 +305,29 @@ const AddTransactionForm = ({
 
         {/* Recurring Transaction */}
         <div className="space-y-3">
-          <label className="block text-gray-700 font-medium">
+          <label className="block text-sm font-medium">
             Recurring Transaction
           </label>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Setup a recurring schedule for the transaction
           </p>
           <div className="flex items-center space-x-3">
             <Switch
               checked={isRecurring}
               onCheckedChange={(checked) => setValue("isRecurring", checked)}
-              className="w-8 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {isRecurring && (
             <div>
-              <label className="block text-gray-700 font-medium mb-2">
+              <label className="mb-2 block text-sm font-medium">
                 Recurring Interval
               </label>
               <Select
                 onValueChange={(value) => setValue("recurringInterval", value)}
                 defaultValue={getValues("recurringInterval")}
               >
-                <SelectTrigger className="w-full mt-1 border-gray-300 shadow-sm rounded-lg hover:ring-2 focus:ring-2 focus:ring-blue-500">
+                <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="Select Interval" />
                 </SelectTrigger>
                 <SelectContent>
@@ -352,7 +351,7 @@ const AddTransactionForm = ({
           <Button
             type="button"
             variant="outline"
-            className="w-full py-3 px-5 bg-gray-200 border-gray-300 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            className="w-full"
             onClick={() => router.back()}
           >
             Cancel
@@ -364,7 +363,7 @@ const AddTransactionForm = ({
           <Button
             type="submit"
             onClick={() => console.log("Validation Errors:", errors)}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white py-2 rounded-lg shadow-md transition-transform transform hover:scale-105"
+            className="w-full"
             disabled={transactionLoading}
           >
             {transactionLoading ? (

@@ -1,28 +1,22 @@
 'use server'
 
 import { db } from "@/lib/prisma";
+import { serializeDecimal } from "@/lib/serialize";
+import { accountSchema } from "@/app/lib/schema";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-
-
-const serializedTransaction = (obj)=>{
-    const serialized = {...obj};
-
-    if (obj.balance) {
-        serialized.balance = obj.balance.toNumber();
-    }
-    if (obj.amount) {
-        serialized.amount = obj.amount.toNumber();
-    }
-
-    return serialized;
-
-};
 
 export async function createAccount (data){
     try {
         const {userId} = await auth();
         if(!userId) throw new Error("Unauthorized");
+
+        // Validate the incoming payload server-side (never trust the client)
+        const parsed = accountSchema.safeParse(data);
+        if (!parsed.success) {
+            throw new Error(parsed.error.errors[0]?.message || "Invalid account data");
+        }
+        data = parsed.data;
 
         const user = await db.user.findUnique({
             where : {
@@ -34,7 +28,7 @@ export async function createAccount (data){
             throw new Error ("User not found")
         }
 
-        //convert balance to float before saving 
+        //convert balance to float before saving
 
         const balanceFloat = parseFloat(data.balance)
 
@@ -70,7 +64,7 @@ export async function createAccount (data){
         });
 
 
-        const serializedAccount = serializedTransaction(account);
+        const serializedAccount = serializeDecimal(account);
 
         revalidatePath("/dashboard");
         return {success : true , data : serializedAccount};
@@ -106,7 +100,7 @@ export async function getUserAccounts(){
             },
           });
           
-        const serializedAccount = accounts.map(serializedTransaction);
+        const serializedAccount = accounts.map(serializeDecimal);
 
         return serializedAccount;
 }
@@ -129,7 +123,7 @@ export async function getDashboardData() {
       orderBy: { date: "desc" },
     });
   
-    return transactions.map(serializedTransaction);
+    return transactions.map(serializeDecimal);
   }
 
   

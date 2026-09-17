@@ -63,24 +63,22 @@ const AccountChart = ({ transactions }) => {
         const expense = payload[1]?.value || 0;
 
         return (
-            <div className="bg-white p-2 rounded shadow-md">
-                <p className="text-sm text-gray-700">{label}</p>
-                <p className="text-sm text-green-600">Income: ₹{income.toFixed(2)}</p>
-                <p className="text-sm text-red-600">Expense: ₹{expense.toFixed(2)}</p>
+            <div className="rounded-md border border-border bg-popover p-2 shadow-sm">
+                <p className="text-sm text-foreground">{label}</p>
+                <p className="text-sm text-positive nums">Income: ₹{income.toFixed(2)}</p>
+                <p className="text-sm text-negative nums">Expense: ₹{expense.toFixed(2)}</p>
             </div>
         );
     };
 
     return (
-        <div className="p-6 bg-gradient-to-t from-indigo-50 to-indigo-100 rounded-xl shadow-xl space-y-6">
-            <h2 className="text-2xl font-semibold text-gray-800">Account Transactions</h2>
-
-            {/* Dropdown for date range selection */}
-            <div className="flex justify-between items-center mb-4">
+        <div className="space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-foreground">Account Activity</h2>
                 <select
                     value={dateRange}
                     onChange={(e) => setDateRange(e.target.value)}
-                    className="p-3 rounded-lg text-gray-800 bg-white border border-gray-300 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300"
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     {Object.entries(DATE_RANGES).map(([key, { label }]) => (
                         <option key={key} value={key} className="text-sm">
@@ -101,32 +99,32 @@ const AccountChart = ({ transactions }) => {
                         bottom: 5,
                     }}
                 >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="date" tick={{ fill: '#4B5563' }} />
-                    <YAxis tick={{ fill: '#4B5563' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" tick={{ fill: 'var(--muted-foreground)' }} />
+                    <YAxis tick={{ fill: 'var(--muted-foreground)' }} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Bar
                         dataKey="income"
-                        fill="#34D399"
-                        radius={[8, 8, 0, 0]}
-                        activeBar={<Rectangle fill="lightgreen" stroke="green" />}
+                        fill="var(--positive)"
+                        radius={[6, 6, 0, 0]}
+                        activeBar={<Rectangle fill="var(--positive)" fillOpacity={0.8} />}
                     />
                     <Bar
                         dataKey="expense"
-                        fill="#F87171"
-                        radius={[8, 8, 0, 0]}
-                        activeBar={<Rectangle fill="red" stroke="darkred" />}
+                        fill="var(--negative)"
+                        radius={[6, 6, 0, 0]}
+                        activeBar={<Rectangle fill="var(--negative)" fillOpacity={0.8} />}
                     />
                 </BarChart>
             </ResponsiveContainer>
 
             {/* Total Income & Expense Display */}
-            <div className="mt-4 flex justify-between text-lg font-semibold text-gray-700">
-                <span className="text-green-600">
+            <div className="mt-4 flex justify-between text-sm font-medium">
+                <span className="text-positive nums">
                     Total Income: ₹{totals.income.toFixed(2)}
                 </span>
-                <span className="text-red-600">
+                <span className="text-negative nums">
                     Total Expense: ₹{totals.expense.toFixed(2)}
                 </span>
             </div>

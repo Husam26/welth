@@ -3,37 +3,36 @@ import { defaultCategories } from "@/data/categories";
 import React from "react";
 import AddTransactionForm from "./_components/transaction-form";
 import { getTransaction } from "@/actions/transaction";
+import PageHeader from "@/components/page-header";
 
-const AddTransactionPage = async ({searchParams}) => {
+export const metadata = {
+  title: "Add Transaction",
+  description: "Add or edit a transaction, or scan a receipt with AI.",
+};
+
+const AddTransactionPage = async ({ searchParams }) => {
   const accounts = await getUserAccounts();
 
-
-  const params = await searchParams; 
-  console.log(params)
+  const params = await searchParams;
   const editId = params?.edit;
 
   let initialData = null;
   if (editId) {
-    const transaction = await getTransaction(editId);
-    initialData = transaction;
+    initialData = await getTransaction(editId);
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
-      {/* Gradient Heading */}
-      <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-6">
-        {editId ? "Edit" : "Add"} Transaction
-      </h1>
-
-      {/* Form Container */}
-      <div className="w-full max-w-4xl bg-white shadow-md rounded-lg p-6">
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        title={`${editId ? "Edit" : "Add"} Transaction`}
+        subtitle="Record income or an expense — or scan a receipt with AI."
+      />
       <AddTransactionForm
         accounts={accounts}
         categories={defaultCategories}
         editMode={!!editId}
         initialData={initialData}
       />
-      </div>
     </div>
   );
 };

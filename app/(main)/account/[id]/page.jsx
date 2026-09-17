@@ -4,75 +4,59 @@ import React, { Suspense } from "react";
 import TransactionTable from "../_components/transaction-table";
 import { BarLoader } from "react-spinners";
 import AccountChart from "../_components/account-chart";
+import PageHeader from "@/components/page-header";
+import { formatCurrency } from "@/lib/currency";
+
+export const metadata = {
+  title: "Account Details",
+  description: "View account balance, transaction history and spending charts.",
+};
+
+const Loader = () => (
+  <div className="flex justify-center py-6">
+    <BarLoader width="60%" color="#4f46e5" />
+  </div>
+);
 
 const AccountDetails = async ({ params }) => {
-  if (!params?.id) {
-    return <p>Loading...</p>; // Handle undefined params case
-  }
+  if (!params?.id) return <Loader />;
 
   const accountData = await getAccountWithTransaction(params.id);
-
-  if (!accountData) {
-    notFound();
-  }
+  if (!accountData) notFound();
 
   const { transactions, balance, ...account } = accountData;
+  const typeLabel = account.type.charAt(0).toUpperCase() + account.type.slice(1).toLowerCase();
 
   return (
-    <div className="bg-gray-100 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-      {/* Account Info Section */}
-      <div className="bg-white p-6 rounded-xl shadow-md mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-6">
-          <div className="space-y-2 text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl font-semibold text-gray-800">
-              {account.name}
-            </h1>
-            <p className="text-sm text-gray-600">
-              {account.type.charAt(0).toUpperCase() +
-                account.type.slice(1).toLowerCase()}{" "}
-              Account
+    <div>
+      <PageHeader
+        title={account.name}
+        subtitle={`${typeLabel} account · ${account._count?.transactions || 0} transactions`}
+        actions={
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Balance</p>
+            <p className="text-2xl font-semibold tracking-tight nums">
+              {formatCurrency(parseFloat(balance))}
             </p>
           </div>
-          <div className="text-center sm:text-right space-y-2">
-            <div className="text-2xl sm:text-3xl font-bold text-green-600">
-            ₹{parseFloat(balance).toFixed(2)}
-            </div>
-            <p className="text-sm text-gray-600">
-              {account._count?.transactions || 0} Transactions
-            </p>
-          </div>
-        </div>
+        }
+      />
+
+      <div className="space-y-6">
+        <Suspense fallback={<Loader />}>
+          <AccountChart transactions={transactions} />
+        </Suspense>
+        <Suspense fallback={<Loader />}>
+          <TransactionTable transactions={transactions} />
+        </Suspense>
       </div>
-
-      {/* Chart Section */}
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center mt-4">
-            <BarLoader width="50%" color="#9333ea" />
-          </div>
-        }
-      >
-        <AccountChart transactions={transactions} />
-      </Suspense>
-
-      {/* Transaction Table */}
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center mt-4">
-            <BarLoader width="50%" color="#9333ea" />
-          </div>
-        }
-      >
-        <TransactionTable transactions={transactions} />
-      </Suspense>
     </div>
   );
 };
 
-// Wrap in Suspense for smooth loading experience
 export default function Accountspage(props) {
   return (
-    <Suspense fallback={<p>Loading account details...</p>}>
+    <Suspense fallback={<Loader />}>
       <AccountDetails {...props} />
     </Suspense>
   );

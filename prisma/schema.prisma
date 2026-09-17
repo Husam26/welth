@@ -23,6 +23,12 @@ model User {
   transactions Transaction[]
   accounts Account[]
   budgets Budget[]
+  categoryBudgets CategoryBudget[]
+  anomalies Anomaly[]
+  forecasts ExpenseForecast[]
+  simulations Simulation[]
+  conversations Conversation[]
+  agentActions AgentAction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -106,6 +112,183 @@ model Budget{
 
   @@index([userId])
   @@map("budgets")
+}
+
+// Per-category budgets (Phase 2, Step 1). Additive to the global Budget above,
+// which continues to act as an optional overall monthly cap.
+model CategoryBudget {
+  id            String       @id @default(uuid())
+  category      String       // category id from data/categories.js, e.g. "food"
+  amount        Decimal
+  period        BudgetPeriod @default(MONTHLY)
+  lastAlertSent DateTime?
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([userId, category]) // one budget per category per user
+  @@index([userId])
+  @@map("category_budgets")
+}
+
+enum BudgetPeriod {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// Anomaly detection (Phase 2, Step 2)
+model Anomaly {
+  id            String          @id @default(uuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId String?
+  category      String?
+  type          AnomalyType
+  severity      AnomalySeverity @default(MEDIUM)
+  score         Decimal         @default(0) // modified z-score / deviation magnitude
+  message       String
+  metadata      Json?           // { dedupeKey, mean/median, mad, observed, threshold }
+  isRead        Boolean         @default(false)
+  detectedAt    DateTime        @default(now())
+
+  @@index([userId, detectedAt])
+  @@map("anomalies")
+}
+
+enum AnomalyType {
+  AMOUNT_SPIKE
+  CATEGORY_SURGE
+  NEW_MERCHANT
+  FREQUENCY_SPIKE
+  BUDGET_OVERRUN
+  DUPLICATE_CHARGE
+}
+
+enum AnomalySeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// Expense forecasting (Phase 2, Step 2)
+model ExpenseForecast {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month      DateTime // first day of the forecasted month
+  category   String?  // null = overall
+  predicted  Decimal
+  lowerBound Decimal
+  upperBound Decimal
+  method     String   // "EWMA" | "HOLT" | "LINEAR"
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, month, category])
+  @@index([userId])
+  @@map("expense_forecasts")
+}
+
+// Financial Digital Twin — Monte Carlo simulations (Phase 2, Step 3)
+model Simulation {
+  id            String            @id @default(uuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  scenario      Json              // { shocks: [...] }
+  status        SimulationStatus  @default(PENDING)
+  iterations    Int               @default(1000)
+  horizonMonths Int               @default(12)
+  results       Json?             // { trajectories, probInsolvency, medianEndBalance, ... }
+  error         String?
+  createdAt     DateTime          @default(now())
+  completedAt   DateTime?
+  batches       SimulationBatch[]
+
+  @@index([userId])
+  @@map("simulations")
+}
+
+model SimulationBatch {
+  id           String     @id @default(uuid())
+  simulationId String
+  simulation   Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  batchIndex   Int
+  iterations   Int
+  partial      Json       // per-batch summary (e.g. insolventCount)
+  createdAt    DateTime   @default(now())
+
+  @@unique([simulationId, batchIndex])
+  @@index([simulationId])
+  @@map("simulation_batches")
+}
+
+enum SimulationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// Welth Agent — agentic AI with tool calling (Phase 2, Step 4)
+model Conversation {
+  id        String        @id @default(uuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String        @default("New conversation")
+  messages  Message[]
+  actions   AgentAction[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String       @db.Text
+  toolCalls      Json?        // function calls the model requested (for display)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+model AgentAction {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  tool           String
+  args           Json
+  result         Json?
+  status         ActionStatus  @default(PROPOSED)
+  createdAt      DateTime      @default(now())
+  executedAt     DateTime?
+
+  @@index([userId])
+  @@map("agent_actions")
+}
+
+enum ActionStatus {
+  PROPOSED
+  CONFIRMED
+  EXECUTED
+  REJECTED
+  FAILED
 }
 
 

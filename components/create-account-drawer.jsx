@@ -76,9 +76,9 @@ const CreateAccountDrawer = ({ children }) => {
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent className="bg-gray-100 p-6 rounded-none shadow-lg w-full sm:w-full">
-        <DrawerHeader>
-          <DrawerTitle className="text-2xl font-semibold text-gray-800">
+      <DrawerContent className="p-6">
+        <DrawerHeader className="px-0">
+          <DrawerTitle className="text-xl font-semibold text-foreground">
             Create New Account
           </DrawerTitle>
         </DrawerHeader>
@@ -88,18 +88,17 @@ const CreateAccountDrawer = ({ children }) => {
             <div className="space-y-2">
               <label
                 htmlFor="name"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium"
               >
                 Account Name
               </label>
               <Input
                 id="name"
                 placeholder="eg., Main checking"
-                className="w-full p-3 rounded-md border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                {...register("name")}
+                               {...register("name")}
               />
               {errors.name && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="mt-1 text-sm text-negative">
                   {errors.name.message}
                 </p>
               )}
@@ -109,15 +108,14 @@ const CreateAccountDrawer = ({ children }) => {
             <div className="space-y-2">
               <label
                 htmlFor="type"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium"
               >
                 Account Type
               </label>
               <Select
                 onValueChange={(value) => setValue("type", value)}
                 defaultValue={watch("type")}
-                className="w-full p-3 rounded-md border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
+                             >
                 <SelectTrigger id="type">
                   <SelectValue placeholder="Select Type" />
                 </SelectTrigger>
@@ -127,7 +125,7 @@ const CreateAccountDrawer = ({ children }) => {
                 </SelectContent>
               </Select>
               {errors.type && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="mt-1 text-sm text-negative">
                   {errors.type.message}
                 </p>
               )}
@@ -137,7 +135,7 @@ const CreateAccountDrawer = ({ children }) => {
             <div className="space-y-2">
               <label
                 htmlFor="balance"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium"
               >
                 Initial Balance
               </label>
@@ -146,11 +144,10 @@ const CreateAccountDrawer = ({ children }) => {
                 type="number"
                 step="0.01"
                 placeholder="0.00"
-                className="w-full p-3 rounded-md border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                {...register("balance")}
+                               {...register("balance")}
               />
               {errors.balance && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="mt-1 text-sm text-negative">
                   {errors.balance.message}
                 </p>
               )}
@@ -160,11 +157,11 @@ const CreateAccountDrawer = ({ children }) => {
             <div className="space-y-2">
               <label
                 htmlFor="isDefault"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium"
               >
                 Set as Default
               </label>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 This account will be selected by default for transactions.
               </p>
               <div className="flex items-center space-x-3">
@@ -172,7 +169,6 @@ const CreateAccountDrawer = ({ children }) => {
                   id="isDefault"
                   onCheckedChange={(checked) => setValue("isDefault", checked)}
                   checked={watch("isDefault")}
-                  className="w-10 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>

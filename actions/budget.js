@@ -70,7 +70,14 @@ export async function updateBudget(amount){
     try {
         const { userId } = await auth();
         if (!userId) throw new Error("Unauthorized");
-    
+
+        // Validate the budget amount server-side
+        const numericAmount = Number(amount);
+        if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+            throw new Error("Budget amount must be a positive number");
+        }
+        amount = numericAmount;
+
         const user = await db.user.findUnique({
           where: {
             clerkUserId: userId,

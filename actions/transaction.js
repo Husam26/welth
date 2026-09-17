@@ -2,24 +2,42 @@
 
 import aj from "@/lib/arcjet";
 import { db } from "@/lib/prisma";
+import { serializeDecimal } from "@/lib/serialize";
+import { inngest } from "@/lib/inngest/client";
 import { request } from "@arcjet/next";
 import { auth } from "@clerk/nextjs/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { AwardIcon } from "lucide-react";
+import { genAI, GEMINI_MODEL } from "@/lib/gemini";
 import { revalidatePath } from "next/cache";
-import { date } from "zod";
+import { z } from "zod";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-const serializeAmount = (obj) => ({
-  ...obj,
-  amount: obj.amount.toNumber(),
+// Server-side validation schema. The client form already validates via Zod, but
+// server actions are a public HTTP surface and must never trust incoming data.
+const transactionInputSchema = z.object({
+  type: z.enum(["INCOME", "EXPENSE"]),
+  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  description: z.string().max(255).optional().nullable(),
+  date: z.coerce.date(),
+  accountId: z.string().min(1, "Account is required"),
+  category: z.string().min(1, "Category is required"),
+  receiptUrl: z.string().url().optional().nullable(),
+  isRecurring: z.boolean().optional().default(false),
+  recurringInterval: z
+    .enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"])
+    .optional()
+    .nullable(),
 });
 
 export async function createTransaction(data) {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
+
+    // Validate & sanitize incoming payload before touching the DB
+    const parsed = transactionInputSchema.safeParse(data);
+    if (!parsed.success) {
+      throw new Error(parsed.error.errors[0]?.message || "Invalid transaction data");
+    }
+    data = parsed.data;
 
     //Arcjet to add rate limiting
     //get data for arcjet
@@ -70,10 +88,10 @@ export async function createTransaction(data) {
 
     const balanceChange = data.type === "EXPENSE" ? -data.amount : data.amount;
 
-    const newBalance = account.balance.toNumber() + balanceChange;
-
-     // Create transaction and update account balance
-
+    // Create transaction and update account balance atomically.
+    // Using an atomic `increment` (instead of read-then-write of an absolute
+    // value) avoids a lost-update race when two transactions are created
+    // concurrently on the same account.
     const transaction = await db.$transaction(async (tx) => {
       const newTransaction = await tx.transaction.create({
         data: {
@@ -88,7 +106,7 @@ export async function createTransaction(data) {
 
       await tx.account.update({
         where: { id: data.accountId },
-        data: { balance: newBalance },
+        data: { balance: { increment: balanceChange } },
       });
 
       return newTransaction;
@@ -97,7 +115,18 @@ export async function createTransaction(data) {
     revalidatePath("/dashboard");
     revalidatePath(`/account/${transaction.accountId}`);
 
-    return { success: true, data: serializeAmount(transaction) };
+    // Fire-and-forget: trigger a near-real-time anomaly scan for this user.
+    // Wrapped so a messaging hiccup never fails the transaction itself.
+    try {
+      await inngest.send({
+        name: "transaction.created",
+        data: { userId: user.id, transactionId: transaction.id },
+      });
+    } catch (e) {
+      console.error("Failed to emit transaction.created event:", e?.message);
+    }
+
+    return { success: true, data: serializeDecimal(transaction) };
   } catch (error) {
     throw new Error(error.message);
   }
@@ -129,7 +158,7 @@ function calculateNextRecurringDate(startDate, interval) {
 
 export async function scanReceipt(file){
   try {
-    const model = genAI.getGenerativeModel({model : "gemini-1.5-flash"});
+    const model = genAI.getGenerativeModel({model : GEMINI_MODEL});
 
     //Convert file to array buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -211,7 +240,7 @@ export async function getTransaction(id) {
 
   if (!transaction) throw new Error("Transaction not found");
 
-  return serializeAmount(transaction);
+  return serializeDecimal(transaction);
 }
 
 
@@ -220,6 +249,13 @@ export async function updateTransaction(id, data) {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
+
+    // Validate & sanitize incoming payload
+    const parsed = transactionInputSchema.safeParse(data);
+    if (!parsed.success) {
+      throw new Error(parsed.error.errors[0]?.message || "Invalid transaction data");
+    }
+    data = parsed.data;
 
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
@@ -283,7 +319,7 @@ export async function updateTransaction(id, data) {
     revalidatePath("/dashboard");
     revalidatePath(`/account/${data.accountId}`);
 
-    return { success: true, data: serializeAmount(transaction) };
+    return { success: true, data: serializeDecimal(transaction) };
   } catch (error) {
     throw new Error(error.message);
   }

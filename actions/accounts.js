@@ -1,22 +1,10 @@
 "use server";
 
 import { db } from "@/lib/prisma";
+import { serializeDecimal } from "@/lib/serialize";
 import { auth } from "@clerk/nextjs/server";
 import { Decimal } from "@prisma/client/runtime/library";
 import { revalidatePath } from "next/cache";
-
-const serializedTransaction = (obj) => {
-  const serialized = { ...obj };
-
-  if (obj.balance) {
-    serialized.balance = obj.balance.toNumber();
-  }
-  if (obj.amount) {
-    serialized.amount = obj.amount.toNumber();
-  }
-
-  return serialized;
-};
 
 export async function updateDefaultAccount(accountId) {
   try {
@@ -51,7 +39,7 @@ export async function updateDefaultAccount(accountId) {
     console.log("Updated default account:", account.id);
 
     revalidatePath("/dashboard");
-    return { success: true, data: serializedTransaction(account) };
+    return { success: true, data: serializeDecimal(account) };
   } catch (error) {
     console.error("Error in updateDefaultAccount:", error);
     return { success: false, error: error.message };
@@ -95,8 +83,8 @@ export async function getAccountWithTransaction(accountId) {
     console.log("Fetched account:", account.id, "Transaction count:", account._count.transactions);
 
     return {
-      ...serializedTransaction(account),
-      transactions: account.transactions.map(serializedTransaction),
+      ...serializeDecimal(account),
+      transactions: account.transactions.map(serializeDecimal),
     };
   } catch (error) {
     console.error("Error in getAccountWithTransaction:", error);
@@ -136,10 +124,10 @@ export async function bulkDeleteTransactions(transactionIds) {
     }
 
     const accountBalanceChanges = transactions.reduce((acc, transaction) => {
-      const change =
-        transaction.type === "EXPENSE"
-          ? -transaction.amount
-          :transaction.amount; 
+      // Deleting a transaction reverses its effect on the balance:
+      // an EXPENSE gets added back, an INCOME gets subtracted.
+      const amount = transaction.amount.toNumber();
+      const change = transaction.type === "EXPENSE" ? amount : -amount;
 
       acc[transaction.accountId] = (acc[transaction.accountId] || 0) + change;
 
@@ -178,7 +166,9 @@ export async function bulkDeleteTransactions(transactionIds) {
     });
 
     revalidatePath("/dashboard");
-    revalidatePath("/account/[id]");
+    // Dynamic route segments must be revalidated with the "page" type so the
+    // path template matches concrete URLs like /account/<id>.
+    revalidatePath("/account/[id]", "page");
 
     console.log("Revalidated paths after deletion.");
     return { success: true };
