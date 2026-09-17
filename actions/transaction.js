@@ -6,7 +6,7 @@ import { serializeDecimal } from "@/lib/serialize";
 import { inngest } from "@/lib/inngest/client";
 import { request } from "@arcjet/next";
 import { auth } from "@clerk/nextjs/server";
-import { genAI, GEMINI_MODEL } from "@/lib/gemini";
+import { genAI, GEMINI_MODEL, withGeminiRetry } from "@/lib/gemini";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -185,15 +185,17 @@ export async function scanReceipt(file){
     If its not a recipt, return an empty object
   `;
 
-    const result  = await model.generateContent([
-      {
-        inlineData : {
-          data : base64String,
-          mimeType : file.type,
+    const result = await withGeminiRetry(() =>
+      model.generateContent([
+        {
+          inlineData: {
+            data: base64String,
+            mimeType: file.type,
+          },
         },
-      },
-      prompt,
-    ]);
+        prompt,
+      ])
+    );
 
     const response = await result.response;
     const text = response.text();

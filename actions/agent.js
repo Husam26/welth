@@ -3,6 +3,7 @@
 import aj from "@/lib/arcjet";
 import { db } from "@/lib/prisma";
 import { runAgentTurn, executeTool } from "@/lib/agent/agent";
+import { isTransientGeminiError } from "@/lib/gemini";
 import { request } from "@arcjet/next";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
@@ -124,7 +125,10 @@ export async function sendAgentMessage(conversationId, content) {
       proposedAction,
     };
   } catch (error) {
-    return { success: false, error: error.message };
+    const message = isTransientGeminiError(error)
+      ? "The AI service is temporarily busy. Please try again in a moment."
+      : error.message;
+    return { success: false, error: message };
   }
 }
 
